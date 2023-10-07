@@ -21,4 +21,7 @@ urlpatterns = [
     #path('admin/', admin.site.urls),
     path('', main),
     path('api/', api),
+    path('products/', products),
+    path('<path:path>', cart),
+    path('<path:path>/<uuid:p_uuid>', cart_del),
 ]

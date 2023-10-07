@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from rest_framework.response import Response
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
-from myapp.models import Api
+from django.apps import apps
+from .models import *
 import json
 
 @csrf_exempt
@@ -52,3 +52,64 @@ def api(request):
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
     
     return JsonResponse({"error": "Invalid method"}, status=405)
+
+@csrf_exempt
+def products(request):
+    products = Products.objects.all()
+    res = []
+    for p in products:
+        dictor = {}
+        dictor["uuid"] = p.uuid
+        dictor["title"] = p.title
+        dictor["price"] = p.price
+        dictor["imageUrl"] = p.imageUrl
+        res.append(dictor)
+    print(res)
+    return JsonResponse(res, safe=False)
+
+
+@csrf_exempt
+def cart(request, path):
+    info = path.split('/')
+    Model = apps.get_model("myapp", info[0].capitalize())
+    print(Model.objects.all())
+    if request.method == "GET":
+        products = Model.objects.all()
+        res = []
+        for p in products:
+            dictor = {}
+            dictor["uuid"] = p.uuid
+            dictor["title"] = p.title
+            dictor["price"] = p.price
+            dictor["imageUrl"] = p.imageUrl
+            res.append(dictor)
+        print(res)
+        return JsonResponse(res, safe=False)
+    if request.method == "POST":
+        data = json.loads(request.body.decode('utf-8'))
+        p_id = data[0]["uuid"]
+        p = Products.objects.get(uuid=p_id)
+        c = Model.objects.create(product_link=p)
+        c.save()
+        return HttpResponse("ok")
+    if request.method == "DELETE":
+        p_uuid = info[1]
+        p = Products.objects.get(uuid=p_uuid)
+        Model.objects.filter(product_link=p).first().delete()
+        return HttpResponse('ok')
+    return HttpResponse('bad')
+    
+
+@csrf_exempt
+def cart_del(request, path, p_uuid):
+    print(f"path:{path}, uuid:{p_uuid}")
+    if request.method == "DELETE":
+        p = Products.objects.get(uuid=p_uuid)
+        Cart.objects.filter(product_link=p).first().delete()
+        return HttpResponse('ok')
+    return HttpResponse('bad')
+    
+
+@csrf_exempt
+def likes(request):
+    ...
